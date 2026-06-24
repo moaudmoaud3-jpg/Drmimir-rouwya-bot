@@ -1,0 +1,15 @@
+services:
+  - type: worker
+    name: rouwya-news-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false          # ستُدخله يدوياً في لوحة Render
+      - key: CHANNEL_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: INTERVAL_HOURS
+        value: "3"           # كل 3 ساعات (غيّرها حسب رغبتك)

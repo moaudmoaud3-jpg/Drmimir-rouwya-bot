@@ -1,9 +1,7 @@
 import os
-import time
 import logging
 import requests
 import anthropic
-import schedule
 from datetime import datetime
 
 # ── إعداد السجل ──────────────────────────────────────────────
@@ -13,11 +11,10 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── المتغيرات البيئية (تُضاف في Render) ─────────────────────
+# ── المتغيرات البيئية ─────────────────────────────────────────
 TELEGRAM_TOKEN  = os.environ.get("TELEGRAM_TOKEN")
 CHANNEL_ID      = os.environ.get("CHANNEL_ID")
 ANTHROPIC_KEY   = os.environ.get("ANTHROPIC_API_KEY")
-INTERVAL_HOURS  = int(os.environ.get("INTERVAL_HOURS", "3"))
 
 # ── تهيئة عميل Anthropic ─────────────────────────────────────
 client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
@@ -69,7 +66,6 @@ def generate_news() -> str:
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=[{"role": "user", "content": prompt}]
         )
-        # جمع كل كتل النص
         text_parts = [b.text for b in response.content if hasattr(b, "text") and b.text]
         return "\n".join(text_parts).strip()
     except Exception as e:
@@ -84,12 +80,11 @@ def run_cycle():
 
     news = generate_news()
     if not news:
-        log.warning("⚠️ لم يُنتج Claude محتوى — تخطّي هذه الدورة")
+        log.warning("⚠️ لم يُنتج Claude محتوى")
         return
 
     full_message = header + news + "\n\n<i>— قناة رؤية | @rouwya</i>"
 
-    # تيليغرام يقبل رسائل حتى 4096 حرف
     if len(full_message) > 4096:
         full_message = full_message[:4090] + "…"
 
@@ -97,19 +92,10 @@ def run_cycle():
 
 # ── نقطة الدخول ──────────────────────────────────────────────
 if __name__ == "__main__":
-    log.info(f"🚀 بوت رؤية يعمل — ينشر كل {INTERVAL_HOURS} ساعة")
+    log.info("🚀 بوت رؤية يعمل")
 
-    # التحقق من المتغيرات
     if not all([TELEGRAM_TOKEN, CHANNEL_ID, ANTHROPIC_KEY]):
-        log.critical("❌ متغيرات البيئة ناقصة. تحقق من TELEGRAM_TOKEN و CHANNEL_ID و ANTHROPIC_API_KEY")
+        log.critical("❌ متغيرات البيئة ناقصة")
         exit(1)
 
-    # تشغيل فوري عند الإطلاق
     run_cycle()
-
-    # جدولة الدورات
-    schedule.every(INTERVAL_HOURS).hours.do(run_cycle)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(60)

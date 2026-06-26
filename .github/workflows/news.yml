@@ -2,7 +2,7 @@ name: Rouwya News Bot
 
 on:
   schedule:
-    - cron: '0 6,8,10,12,14,16,18,20,21,22 * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 jobs:
